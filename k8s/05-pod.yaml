@@ -1,0 +1,108 @@
+---
+# Landmark Technology DevOps Demo - Kubernetes Pod
+# Pods are the smallest deployable units in Kubernetes
+# This is a basic example; use Deployments for production
+apiVersion: v1
+kind: Pod
+metadata:
+  name: landmark-app-pod
+  namespace: landmark-devops
+  labels:
+    app: landmark
+    component: application
+  annotations:
+    description: "Landmark DevOps Demo Application Pod"
+spec:
+  serviceAccountName: landmark-app
+  
+  # Container definition
+  containers:
+    - name: app
+      image: landmark-devops:latest
+      imagePullPolicy: IfNotPresent
+      
+      # Container ports
+      ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+      
+      # Environment variables from ConfigMap
+      envFrom:
+        - configMapRef:
+            name: landmark-config
+        - secretRef:
+            name: landmark-secrets
+      
+      # Resource requests and limits
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "250m"
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+      
+      # Liveness probe - restarts pod if unhealthy
+      livenessProbe:
+        httpGet:
+          path: /
+          port: http
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 3
+      
+      # Readiness probe - removes from service if not ready
+      readinessProbe:
+        httpGet:
+          path: /
+          port: http
+        initialDelaySeconds: 10
+        periodSeconds: 5
+        timeoutSeconds: 3
+        failureThreshold: 2
+      
+      # Startup probe - gives app time to start
+      startupProbe:
+        httpGet:
+          path: /
+          port: http
+        initialDelaySeconds: 0
+        periodSeconds: 10
+        timeoutSeconds: 3
+        failureThreshold: 30
+      
+      # Volume mounts
+      volumeMounts:
+        - name: app-data
+          mountPath: /app/data
+      
+      # Security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: false
+        capabilities:
+          drop:
+            - ALL
+  
+  # Pod-level security context
+  securityContext:
+    fsGroup: 1001
+  
+  # Volumes
+  volumes:
+    - name: app-data
+      persistentVolumeClaim:
+        claimName: landmark-app-pvc
+  
+  # Restart policy
+  restartPolicy: Always
+  
+  # DNS policy
+  dnsPolicy: ClusterFirst
+  
+  # Termination grace period
+  terminationGracePeriodSeconds: 30

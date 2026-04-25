@@ -1,0 +1,218 @@
+---
+# Landmark Technology DevOps Demo - Kubernetes StatefulSet
+# StatefulSets manage stateful applications with stable network identity
+# Demonstrates persistent state management - key for teaching DevOps concepts
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: landmark-app-stateful
+  namespace: landmark-devops
+  labels:
+    app: landmark
+    component: application
+    variant: stateful
+spec:
+  serviceName: landmark-app-headless
+  replicas: 3
+  
+  selector:
+    matchLabels:
+      app: landmark
+      component: application
+      variant: stateful
+  
+  template:
+    metadata:
+      labels:
+        app: landmark
+        component: application
+        variant: stateful
+    
+    spec:
+      serviceAccountName: landmark-app
+      
+      containers:
+        - name: app
+          image: landmark-devops:latest
+          imagePullPolicy: IfNotPresent
+          
+          ports:
+            - name: http
+              containerPort: 3000
+          
+          envFrom:
+            - configMapRef:
+                name: landmark-config
+            - secretRef:
+                name: landmark-secrets
+          
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          
+          volumeMounts:
+            - name: app-storage
+              mountPath: /app/data
+          
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+      
+      securityContext:
+        fsGroup: 1001
+      
+      terminationGracePeriodSeconds: 30
+  
+  # Persistent volume claims for each replica
+  volumeClaimTemplates:
+    - metadata:
+        name: app-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: landmark-storage
+        resources:
+          requests:
+            storage: 10Gi
+
+---
+# Database StatefulSet (MySQL)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: landmark-mysql-stateful
+  namespace: landmark-devops
+  labels:
+    app: landmark
+    component: database
+    variant: stateful
+spec:
+  serviceName: landmark-mysql-headless
+  replicas: 1
+  
+  selector:
+    matchLabels:
+      app: landmark
+      component: database
+      variant: stateful
+  
+  template:
+    metadata:
+      labels:
+        app: landmark
+        component: database
+        variant: stateful
+    
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0-alpine
+          
+          ports:
+            - name: mysql
+              containerPort: 3306
+          
+          envFrom:
+            - secretRef:
+                name: landmark-secrets
+          
+          env:
+            - name: MYSQL_DATABASE
+              value: "landmark_devops"
+          
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          
+          livenessProbe:
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - localhost
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          readinessProbe:
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - localhost
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+            - name: db-config
+              mountPath: /etc/mysql/conf.d
+          
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+      
+      volumes:
+        - name: db-config
+          configMap:
+            name: landmark-db-config
+      
+      terminationGracePeriodSeconds: 30
+  
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: landmark-storage
+        resources:
+          requests:
+            storage: 20Gi

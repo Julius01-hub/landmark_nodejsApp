@@ -1,0 +1,118 @@
+---
+# Landmark Technology DevOps Demo - Kubernetes Ingress
+# Ingress provides HTTP and HTTPS routing to services
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: landmark-ingress
+  namespace: landmark-devops
+  labels:
+    app: landmark
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  tls:
+    - hosts:
+        - landmark-devops.example.com
+      secretName: landmark-tls-cert
+  
+  rules:
+    - host: landmark-devops.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: landmark-app
+                port:
+                  number: 3000
+
+---
+# Ingress for local development (without TLS)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: landmark-ingress-local
+  namespace: landmark-devops
+  labels:
+    app: landmark
+    environment: local
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+    - host: landmark-devops.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: landmark-app
+                port:
+                  number: 3000
+
+---
+# NetworkPolicy for security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: landmark-network-policy
+  namespace: landmark-devops
+  labels:
+    app: landmark
+spec:
+  podSelector:
+    matchLabels:
+      app: landmark
+  policyTypes:
+    - Ingress
+    - Egress
+  
+  ingress:
+    # Allow from Ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+    
+    # Allow from same namespace
+    - from:
+        - podSelector:
+            matchLabels:
+              app: landmark
+      ports:
+        - protocol: TCP
+          port: 3000
+  
+  egress:
+    # Allow to DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+    
+    # Allow to database
+    - to:
+        - podSelector:
+            matchLabels:
+              app: landmark
+              component: database
+      ports:
+        - protocol: TCP
+          port: 3306
+    
+    # Allow external HTTPS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443

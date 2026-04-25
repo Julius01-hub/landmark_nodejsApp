@@ -1,0 +1,81 @@
+---
+# Landmark Technology DevOps Demo - Kubernetes StorageClass
+# StorageClasses define how persistent volumes are provisioned
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: landmark-storage
+  labels:
+    app: landmark
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: gp3
+  iops: "3000"
+  throughput: "125"
+  encrypted: "true"
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+
+---
+# PersistentVolumeClaim for database storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: landmark-db-pvc
+  namespace: landmark-devops
+  labels:
+    app: landmark
+    component: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: landmark-storage
+  resources:
+    requests:
+      storage: 20Gi
+
+---
+# PersistentVolumeClaim for application data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: landmark-app-pvc
+  namespace: landmark-devops
+  labels:
+    app: landmark
+    component: application
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: landmark-storage
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# PersistentVolume for local development (optional)
+# Use this for local Kubernetes clusters (minikube, kind, etc.)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: landmark-db-pv-local
+  labels:
+    app: landmark
+    component: database
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: landmark-storage
+  local:
+    path: /mnt/data/landmark-db
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - minikube
