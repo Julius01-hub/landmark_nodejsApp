@@ -31,6 +31,7 @@ A comprehensive DevOps teaching platform demonstrating modern containerization, 
 ```bash
 git clone https://github.com/yourusername/landmark-devops-demo.git
 cd landmark-devops-demo
+sudo yum install npm -y
 npm install
 ```
 
