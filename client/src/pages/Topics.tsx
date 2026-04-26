@@ -136,70 +136,269 @@ sudo journalctl -u nginx -f`, description: "Manage and monitor services with sys
     description: "Version control and collaborative development workflows",
     modules: [
       {
-        title: "Git Fundamentals",
-        notes: `Git is a distributed version control system. Every developer has a full copy of the repository history.
+        title: "Understanding Version Control & Git",
+        notes: `In modern software development and IT operations, managing changes to code and project files is paramount. A Version Control System (VCS) tracks and manages changes to files over time, allowing multiple people to collaborate, track every modification, revert to previous versions, and manage different lines of development simultaneously.
 
-Core concepts:
-• Working Directory — Where you edit files
-• Staging Area (Index) — Where you prepare commits (git add)
-• Local Repository — Your committed history (git commit)
-• Remote Repository — Shared repo on GitHub/GitLab (git push/pull)
+Git is the most widely adopted distributed version control system (DVCS) globally. Created by Linus Torvalds in 2005, Git is renowned for its speed, data integrity, and support for distributed, non-linear workflows. Unlike older centralized VCSs, every developer's working copy of the code is a full-fledged repository with complete history and full version-tracking capabilities, independent of network access or a central server.
 
-The three-tree architecture: HEAD (last commit) → Index (staging) → Working Directory. Understanding this flow is key to mastering Git.`,
+GitHub is a web-based platform that provides hosting for Git repositories. It extends Git's capabilities by offering features for collaboration, project management, code review, and social coding. While Git is the underlying technology for version control, GitHub provides the infrastructure and tools to host and manage your Git-based projects in the cloud.`,
         examples: [
-          { code: `# Initialize and first commit
-git init
-git add .
-git commit -m "Initial commit"`, description: "Start a new repository" },
-          { code: `# Check status and history
-git status
-git log --oneline --graph --all
-git diff HEAD~1`, description: "Inspect repository state" },
-          { code: `# Branching
-git branch feature/login
-git checkout feature/login
-# Or in one command:
-git checkout -b feature/login`, description: "Create and switch branches" },
-          { code: `# Stashing work in progress
-git stash
-git stash list
-git stash pop`, description: "Temporarily save uncommitted changes" },
+          { code: `# Install Git (Amazon Linux / CentOS)
+sudo yum install git -y
+
+# Verify installation
+git version`, description: "Install and verify Git" },
+          { code: `# Configure your identity
+git config --global user.name "Your Name"
+git config --global user.email "your_email@example.com"
+
+# Verify configuration
+git config --global --list`, description: "Set up your Git identity (required before first commit)" },
         ],
       },
       {
-        title: "Remote Repositories & Collaboration",
-        notes: `Remote repositories enable team collaboration. GitHub, GitLab, and Bitbucket are popular hosting platforms.
+        title: "Core Git Workflow: init, status, add, commit",
+        notes: `The essential Git commands you will use daily to manage your projects:
 
-Workflow:
-1. Fork or clone the repository
-2. Create a feature branch
-3. Make changes and commit
-4. Push to remote
-5. Create a Pull Request (PR)
-6. Code review and approval
-7. Merge to main branch
+• git init — Transforms the current directory into a Git repository. Creates a hidden .git folder that stores all metadata and the object database for version control.
 
-Best practices: Write meaningful commit messages, keep PRs small and focused, always pull before pushing, use .gitignore to exclude build artifacts.`,
+• git status — Your go-to command to understand the current state of your working directory and staging area. It tells you which files are untracked, modified, or staged.
+
+• git add — Moves changes from your working directory to the staging area (also known as the index). Think of it like calling specific guests to the stage for a group photo — you're selecting which changes to include in your next snapshot.
+  - git add <file> — Stage a specific file
+  - git add . — Stage all changes in the current directory
+
+• git rm --cached <file> — Unstage a file (remove from staging area without deleting it).
+
+• git commit -m "message" — Takes everything from the staging area and permanently stores it as a new snapshot in your repository's history. Each commit must have a descriptive message explaining the changes made. Every commit is like a point in time you can always go back to.
+
+• git show — Displays the details of the most recent commit, including the diff of changes made.`,
         examples: [
-          { code: `# Connect to remote
-git remote add origin https://github.com/user/repo.git
-git push -u origin main`, description: "Link local repo to GitHub" },
-          { code: `# Feature branch workflow
-git checkout -b feature/new-feature
-# ... make changes ...
-git add .
-git commit -m "feat: add user authentication"
+          { code: `# Create a project and initialize Git
+mkdir landmark_website
+cd landmark_website
+git init
+ls -a  # You'll see the .git folder`, description: "Initialize a new Git repository" },
+          { code: `# Create files and check status
+echo "<h1>Welcome</h1>" > index.html
+echo "body { font-family: sans-serif; }" > style.css
+git status
+# Shows: Untracked files: index.html, style.css`, description: "Check which files Git is tracking" },
+          { code: `# Stage specific file vs all files
+git add index.html       # Stage only index.html
+git status               # index.html is staged, style.css is untracked
+
+git add .                # Stage everything
+git status               # Both files are now staged`, description: "Stage files for commit" },
+          { code: `# Commit your changes
+git commit -m "Initial website setup: added basic HTML and CSS"
+git status               # "nothing to commit, working tree clean"`, description: "Save a snapshot of your staged changes" },
+        ],
+      },
+      {
+        title: "Remote Repositories: push, pull, remote",
+        notes: `Remote repositories are versions of your project hosted on the internet (like GitHub). They enable team collaboration and serve as backups.
+
+• git remote add <name> <url> — Adds a new remote repository connection. The convention is to name the primary remote "origin".
+
+• git remote -v — Verify your remote connections (shows fetch and push URLs).
+
+• git push -u <remote> <branch> — Uploads your committed changes from your local repository to the remote. The -u flag sets the upstream branch, linking your local branch to the remote one (usually done on the first push).
+
+• git pull <remote> <branch> — Fetches (downloads) changes from a remote repository and integrates them into your current local branch. This keeps your local repository synchronized with the remote.
+
+Authentication: Git no longer supports password authentication for GitHub. You must use either:
+1. Personal Access Token (PAT) — Go to GitHub Settings → Developer Settings → Personal Access Tokens → Generate Token
+2. SSH Key — More secure and convenient for frequent use`,
+        examples: [
+          { code: `# Add remote and push
+git remote add origin https://github.com/YourUser/your-repo.git
+git remote -v
+git branch -M main
+git push -u origin main`, description: "Connect local repo to GitHub and push" },
+          { code: `# Pull latest changes from remote
+git pull origin main`, description: "Download and integrate remote changes" },
+          { code: `# Set up SSH authentication
+ssh-keygen -t ed25519 -C "your_email@example.com"
+cat ~/.ssh/id_ed25519.pub
+# Copy the key and add it to GitHub: Settings → SSH keys → Add new key
+
+# Switch repo to SSH
+git remote set-url origin git@github.com:YourUser/your-repo.git
+
+# Test connection
+ssh -T git@github.com`, description: "Set up SSH key authentication for GitHub" },
+        ],
+      },
+      {
+        title: "Branching: Working on Features Independently",
+        notes: `Branching is one of Git's most powerful features. It allows you to diverge from the main line of development and continue to work independently without affecting the main project. Think of it like creating a separate copy of your project where you can experiment, add new features, or fix bugs, and then merge those changes back when ready.
+
+Branch naming conventions in real projects:
+• main / master → Production
+• release → Staging
+• fix/ → Bug fixes (e.g., fix/login-error)
+• feature/ → New features (e.g., feature/login/faceid)
+
+The importance of branching:
+1. Avoids everyone editing the same file simultaneously
+2. Safe experimentation without affecting the main codebase
+3. Parallel work across team members
+4. Easy roll-back if something goes wrong
+5. Keeps the original copy uncorrupted
+
+Key commands:
+• git branch — List all branches (* marks the current branch)
+• git branch <name> — Create a new branch
+• git checkout <name> — Switch to an existing branch
+• git checkout -b <name> — Create AND switch to a new branch in one command`,
+        examples: [
+          { code: `# List branches and create a new one
+git branch                        # Shows: * master
+git branch feature/contact-form   # Create new branch
+git branch                        # Shows: feature/contact-form, * master`, description: "Create a feature branch" },
+          { code: `# Switch to the feature branch and work on it
+git checkout feature/contact-form
+git branch                        # Shows: * feature/contact-form, master
+
+echo "<form>Contact Form Here</form>" > contact.html
+git add contact.html
+git commit -m "FEAT: Add basic contact form page"`, description: "Switch branches and make changes" },
+          { code: `# Create and switch in one command
+git checkout -b feature/new-design
+git branch
+# Shows: master, feature/contact-form, * feature/new-design`, description: "Shortcut: create + switch branch" },
+          { code: `# Push a feature branch to GitHub
+git push origin feature/contact-form`, description: "Push your branch to the remote" },
+        ],
+      },
+      {
+        title: "Merging, Rebasing & Conflict Resolution",
+        notes: `git merge combines changes from one branch into another. To merge, you must switch to the destination branch first, then merge the source branch into it.
+
+Two types of merges:
+• Fast-forward merge — Occurs when there is a linear path from the current branch to the target. Git simply moves the pointer forward.
+• Three-way merge — Occurs when branches have diverged. Git creates a new "merge commit" with two parent commits.
+
+git rebase rewrites history by reapplying your feature branch commits one by one onto the tip of the target branch. This results in a cleaner, linear history.
+⚠️ Caution: Never rebase commits that have already been pushed to a shared remote repository.
+
+Merge Conflicts occur when both branches modify the same part of the same file differently. Git pauses and asks you to resolve manually. Conflict markers:
+• <<<<<<< HEAD — Your current branch changes
+• ======= — Separator
+• >>>>>>> feature/branch — Incoming branch changes
+
+Resolution steps:
+1. Open the conflicting file
+2. Edit to keep the correct changes (remove conflict markers)
+3. git add <file> to mark as resolved
+4. git commit to complete the merge`,
+        examples: [
+          { code: `# Merge a feature branch into main
+git checkout main                    # Switch to destination branch
+git merge feature/contact-form       # Merge source branch
+# Output: Fast-forward, contact.html created`, description: "Perform a merge" },
+          { code: `# Rebase a feature branch onto main
+git checkout feature/new-design
+git rebase main
+# Reapplies your commits on top of main's latest`, description: "Rebase for a clean linear history" },
+          { code: `# When a merge conflict occurs:
+git merge feature/alice
+# CONFLICT (content): Merge conflict in index.html
+
+# The file will contain:
+# <<<<<<< HEAD
+# <p>Bob's important update.</p>
+# =======
+# <p>Alice's new paragraph.</p>
+# >>>>>>> feature/alice
+
+# Edit the file to resolve, then:
+git add index.html
+git commit -m "Merge feature/alice - resolved conflict in index.html"`, description: "Resolve a merge conflict step by step" },
+        ],
+      },
+      {
+        title: "GitHub: Collaboration, Security & Pull Requests",
+        notes: `GitHub is more than just a place to store repositories — it's a powerful platform for collaborative software development.
+
+Multi-Factor Authentication (MFA):
+Adds an extra layer of security. Even if someone steals your password, they can't access your account without the second factor. Enable it via: GitHub Settings → Password and authentication → Enable two-factor authentication. Save your recovery codes securely!
+
+Branch Protection Rules:
+Prevent accidental or unauthorized changes to important branches (main/master). Configure via: Repository Settings → Branches → Add rule.
+Common rules:
+• Require pull request reviews before merging
+• Require status checks (automated tests) to pass
+• Require linear history (rebase-only workflow)
+• Restrict who can push directly
+
+Pull Requests (PRs):
+The primary mechanism for code review and merging changes. When you create a PR, you're asking teammates to review your code before it's integrated.
+
+PR Workflow:
+1. Push your feature branch to GitHub
+2. Click "Compare & pull request" on GitHub
+3. Select base branch (main) and compare branch (your feature)
+4. Add a clear title and description
+5. Assign reviewers
+6. Reviewers approve or request changes
+7. Merge when approved (options: merge commit, squash and merge, rebase and merge)`,
+        examples: [
+          { code: `# Push feature branch then create PR on GitHub
 git push origin feature/new-feature
-# Then create PR on GitHub`, description: "Standard feature branch workflow" },
-          { code: `# Sync with remote
-git fetch origin
-git pull origin main
-git rebase main  # Rebase feature branch onto main`, description: "Keep your branch up to date" },
-          { code: `# Resolve merge conflicts
-git merge main
-# Edit conflicted files, then:
-git add .
-git commit -m "resolve merge conflicts"`, description: "Handle merge conflicts" },
+# Go to GitHub → "Compare & pull request" → Fill details → Create`, description: "Create a Pull Request" },
+          { code: `# Enable commit signing with SSH
+git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/id_ed25519.pub
+git config --global commit.gpgsign true
+
+# Make a signed commit
+git commit -S -m "verified signed commit"`, description: "Set up verified/signed commits" },
+        ],
+      },
+      {
+        title: "Logging Commands: Understanding Project History",
+        notes: `Git keeps a detailed history of every change. Logging commands help you explore this history.
+
+git log — Your primary tool for viewing commit history. Shows commits in reverse chronological order (newest first) with hash, author, date, and message.
+
+Useful git log options:
+• git log --oneline — Each commit on a single line (compact view)
+• git log --graph --oneline --all — Visualizes branch and merge history with ASCII art
+• git log -p — Shows the full diff introduced by each commit
+• git log --author="Name" — Filter commits by author
+• git log --grep="FEAT" — Filter commits by message pattern
+
+git reflog — Records every single change to your HEAD (commits, checkouts, merges, rebases, resets). It's your safety net — you can recover lost commits or branches even if they were seemingly deleted. Each entry has a HEAD@{index} reference you can use with git reset to go back to that state.
+
+git show — Displays the details of a specific commit including the diff of changes made.`,
+        examples: [
+          { code: `# Compact log view
+git log --oneline
+# 2b3c4d5 Merge branch 'feature/alice' into master
+# 8d9e0f1 Bob: Added his update
+# 1a2b3c4 Alice: Added her paragraph
+# 7a1b2c3 Initial homepage heading`, description: "View concise commit history" },
+          { code: `# Visual branch graph
+git log --graph --oneline --all
+# *   2b3c4d5 Merge branch 'feature/alice'
+# |\  
+# | * 1a2b3c4 Alice: Added her paragraph
+# * | 8d9e0f1 Bob: Added his update
+# |/
+# * 7a1b2c3 Initial homepage heading`, description: "See branch and merge history visually" },
+          { code: `# View the reflog (your safety net)
+git reflog
+# 2b3c4d5 HEAD@{0}: commit (merge): Merge branch 'feature/alice'
+# 8d9e0f1 HEAD@{1}: commit: Bob: Added his update
+# 7a1b2c3 HEAD@{2}: checkout: moving from feature/alice to master
+# 1a2b3c4 HEAD@{3}: commit: Alice: Added her paragraph`, description: "Track all HEAD movements (recover lost work)" },
+          { code: `# Other useful commands
+git stash              # Temporarily save uncommitted changes
+git stash list         # List all stashes
+git stash pop          # Restore the most recent stash
+git show               # Show details of the latest commit`, description: "Stashing and inspecting commits" },
         ],
       },
     ],
