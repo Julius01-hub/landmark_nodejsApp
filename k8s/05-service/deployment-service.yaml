@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: landmark-app
+  namespace: landmark-devops
+  labels:
+    app: landmark-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: landmark-app
+  template:
+    metadata:
+      labels:
+        app: landmark-app
+    spec:
+      containers:
+        - name: app
+          image: landmark-devops:latest
+          ports:
+            - containerPort: 3000
+
+---
+# ClusterIP Service (internal access only)
+apiVersion: v1
+kind: Service
+metadata:
+  name: landmark-app
+  namespace: landmark-devops
+spec:
+  type: ClusterIP
+  selector:
+    app: landmark-app
+  ports:
+    - port: 80
+      targetPort: 3000
+
+---
+# LoadBalancer Service (external access)
+apiVersion: v1
+kind: Service
+metadata:
+  name: landmark-app-lb
+  namespace: landmark-devops
+spec:
+  type: LoadBalancer
+  selector:
+    app: landmark-app
+  ports:
+    - port: 80
+      targetPort: 3000
+
+---
+# NodePort Service (access via node IP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: landmark-app-nodeport
+  namespace: landmark-devops
+spec:
+  type: NodePort
+  selector:
+    app: landmark-app
+  ports:
+    - port: 80
+      targetPort: 3000
+      nodePort: 30080

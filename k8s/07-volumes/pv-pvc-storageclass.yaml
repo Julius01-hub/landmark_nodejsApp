@@ -1,0 +1,43 @@
+# PersistentVolume — the actual storage resource
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: landmark-db-pv
+  labels:
+    app: landmark
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: landmark-storage
+  hostPath:
+    path: /mnt/data/landmark-db
+
+---
+# PersistentVolumeClaim — a request for storage by a pod
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: landmark-db-pvc
+  namespace: landmark-devops
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: landmark-storage
+  resources:
+    requests:
+      storage: 20Gi
+
+---
+# StorageClass — defines how volumes are dynamically provisioned
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: landmark-storage
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: gp3
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer

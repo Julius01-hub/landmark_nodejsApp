@@ -1,88 +1,69 @@
-# Kubernetes - Orchestration Guide
+# Kubernetes Manifests
 
-## Quick Start
+Each subfolder contains a specific Kubernetes object with its own YAML manifest(s) and a README explaining what it is, how to use it, and how to troubleshoot it.
 
-### Deploy to Kubernetes
+## Folder Structure
 
-```bash
-# Create namespace
-kubectl apply -f k8s/01-namespace.yaml
-
-# Create ConfigMap and Secret
-kubectl apply -f k8s/02-configmap-secret.yaml
-
-# Deploy application
-kubectl apply -f k8s/03-deployment.yaml
-
-# Create services
-kubectl apply -f k8s/04-service.yaml
-
-# Deploy database (StatefulSet)
-kubectl apply -f k8s/05-statefulset.yaml
+```
+k8s/
+├── 01-namespace/          # Namespace — virtual cluster isolation
+├── 02-pod/                # Pod — smallest deployable unit
+├── 03-replicaset/         # ReplicaSet — maintains desired pod count
+├── 04-deployment/         # Deployment — rolling updates & rollbacks
+├── 05-service/            # Service — stable networking for pods
+├── 06-configmap-secret/   # ConfigMap & Secret — configuration & sensitive data
+├── 07-volumes/            # PV, PVC, StorageClass — persistent storage
+├── 08-statefulset/        # StatefulSet — stateful apps (databases)
+├── 09-serviceaccount/     # ServiceAccount & RBAC — pod identity & permissions
+├── 10-daemonset/          # DaemonSet — one pod per node
+├── 11-hpa/                # HorizontalPodAutoscaler — auto-scaling
+└── 12-ingress/            # Ingress — HTTP/HTTPS routing
 ```
 
-### Verify Deployment
+## Teaching Order
+
+Start with the namespace, then teach each object in order:
 
 ```bash
-# Check pods
-kubectl get pods -n landmark-devops
+# 1. Create the namespace
+kubectl apply -f 01-namespace/
 
-# Check services
-kubectl get svc -n landmark-devops
+# 2. Run a single pod
+kubectl apply -f 02-pod/
 
-# Check deployment status
-kubectl describe deployment landmark-app -n landmark-devops
+# 3. Scale with a ReplicaSet
+kubectl apply -f 03-replicaset/
+
+# 4. Deploy with rolling updates
+kubectl apply -f 04-deployment/
+
+# 5. Expose with a Service
+kubectl apply -f 05-service/
+
+# 6. Configure with ConfigMaps and Secrets
+kubectl apply -f 06-configmap-secret/
+
+# 7. Persist data with Volumes
+kubectl apply -f 07-volumes/
+
+# 8. Run stateful apps
+kubectl apply -f 08-statefulset/
+
+# 9. Control permissions with ServiceAccounts
+kubectl apply -f 09-serviceaccount/
+
+# 10. Run on every node with DaemonSet
+kubectl apply -f 10-daemonset/
+
+# 11. Auto-scale with HPA
+kubectl apply -f 11-hpa/
+
+# 12. Route external traffic with Ingress
+kubectl apply -f 12-ingress/
 ```
 
-### Access Application
+## Clean Up
 
 ```bash
-# Port forward to access locally
-kubectl port-forward svc/landmark-app-lb 3000:80 -n landmark-devops
-
-# Get load balancer endpoint (if using cloud provider)
-kubectl get svc landmark-app-lb -n landmark-devops -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
-```
-
-## Kubernetes Manifests
-
-### 01-namespace.yaml
-Creates isolated namespace for the application.
-
-### 02-configmap-secret.yaml
-Stores configuration and secrets for the application.
-
-### 03-deployment.yaml
-Manages application replicas with 2 replicas by default.
-
-### 04-service.yaml
-Exposes the application with ClusterIP and LoadBalancer services.
-
-### 05-statefulset.yaml
-Manages MySQL database with persistent storage.
-
-## Key Concepts
-
-- **Namespace**: Logical isolation for resources
-- **Deployment**: Manages application replicas
-- **Service**: Network access to pods
-- **StatefulSet**: Manages stateful applications like databases
-- **ConfigMap**: Non-sensitive configuration
-- **Secret**: Sensitive data like passwords
-- **PersistentVolume**: Persistent storage for databases
-
-## Cleanup
-
-```bash
-# Delete all resources
 kubectl delete namespace landmark-devops
 ```
-
-## Teaching Points
-
-- **Pod**: Smallest deployable unit in Kubernetes
-- **Deployment**: Declarative updates for pods
-- **Service Discovery**: DNS-based service discovery
-- **State Persistence**: StatefulSets for databases
-- **Configuration Management**: ConfigMaps and Secrets
-- **Scaling**: Horizontal pod autoscaling
